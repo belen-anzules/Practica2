@@ -12,10 +12,10 @@ def convertir(precio_usd, moneda_destino, tasas):
     """Convierte el valor a otra moneda"""
     # Obtiene la tasa de cambio de dólares a moneda destino 
     tasa = tasas["USD"].get(moneda_destino)
-    # Si la moneda de destino no exsite, lanza una excepción
+    # Si la moneda de destino no existe, lanza una excepción
     if not tasa:
         raise ValueError("Moneda no soportada")
-    return precio_usd * tasa
+    return round(precio_usd * tasa, 2)  # 🔹 Redondear resultado a 2 decimales
 
 def registrar_transaccion(producto, precio_convertido, moneda, ruta_log):
     """Escribe una nueva línea en el archivo de registro"""
@@ -26,15 +26,21 @@ def registrar_transaccion(producto, precio_convertido, moneda, ruta_log):
         archivo.write(f"{fecha} | {producto}: {precio_convertido:.2f} {moneda}\n")
 
 def actualizar_tasas(ruta):
-# Simular API: Cambiar tasas aleatoriamente ±2%
+    """Actualiza las tasas simulando un cambio aleatorio y guarda con 2 decimales"""
     with open(ruta, "r+") as archivo:
         tasas = json.load(archivo)
         for moneda in tasas["USD"]:
-            tasas["USD"][moneda] *= 0.98 + (0.04 * random.random())
+            nueva_tasa = tasas["USD"][moneda] * (0.98 + (0.04 * random.random()))
+            tasas["USD"][moneda] = round(nueva_tasa, 2)  # 🔹 Redondear a 2 decimales
+
+        # 🔹 Actualiza la fecha dentro del bloque with
         tasas["actualizacion"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # 🔹 Sobrescribe y elimina cualquier resto del archivo anterior
         archivo.seek(0)
         json.dump(tasas, archivo, indent=2)
-
+        archivo.truncate()
+    
 # Ejemplo de uso
 if __name__ == "__main__":
     actualizar_tasas("data/tasas.json")
@@ -42,5 +48,3 @@ if __name__ == "__main__":
     precio_usd = 100.00
     precio_eur = convertir(precio_usd, "EUR", tasas)
     registrar_transaccion("Laptop", precio_eur, "EUR", "logs/historial.txt")
-
-
